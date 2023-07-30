@@ -13,7 +13,8 @@ namespace store.Services.ProductService
         Task<List<Product>> AddProduct(Product product);   
         Task<List<Product>?> UpdateProduct(int id, Product request);
         Task<List<Product>?> DeleteProduct(int id);
-        Task<List<Product>?> SaleProduct(int id, int quantity);
-        Task<List<Product>?> BuyProduct(int id, int quantity);
+        Task<List<Product>?> SaleProduct(List<ListSale> products);
+        Task<List<Product>?> BuyProduct(List<ListSale> products);
+
     }
 }

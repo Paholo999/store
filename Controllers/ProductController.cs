@@ -24,6 +24,7 @@ namespace store.Controllers
             return await _productService.GetAllProducts();
         }
 
+
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetSingleProduct(int id)
         {
@@ -50,18 +51,18 @@ namespace store.Controllers
         }
 
         [HttpPut("SaleProduct")]
-        public async Task<ActionResult<List<Product>>> SaleProduct(int id, int quantity)
+        public async Task<ActionResult<List<Product>>> SaleProduct(List<ListSale> listSales)
         {
-            var result = await _productService.SaleProduct(id,quantity);
+            var result = await _productService.SaleProduct(listSales);
             if(result is null)
                 return NotFound("Product not found");
             return Ok(result);
         }
 
         [HttpPut("BuyProduct")]
-        public async Task<ActionResult<List<Product>>> BuyProduct(int id, int quantity)
+        public async Task<ActionResult<List<Product>>> BuyProduct(List<ListSale> products)
         {
-            var result = await _productService.BuyProduct(id,quantity);
+            var result = await _productService.BuyProduct(products);
             if(result is null)
                 return NotFound("Product not found");
             return Ok(result);
@@ -75,5 +76,6 @@ namespace store.Controllers
                 return NotFound("Product not found");
             return Ok(result);
         }
+
     }
 }

@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using store.Data;
 using store.Models;
 using store.Services.SaleService;
+using System.Text.Json;
+using Confluent.Kafka;
 
 namespace store.Services.ProductService
 {
@@ -42,7 +44,6 @@ namespace store.Services.ProductService
             var products = await _context.Products.ToListAsync();
             return products;
         }
-
         public async Task<Product?> GetSingleProduct(int id)
         {
             var product = await _context.Products.FindAsync(id);
@@ -65,34 +66,97 @@ namespace store.Services.ProductService
             return await _context.Products.ToListAsync();
         }
 
-        public async Task<List<Product>?> SaleProduct(int id, int quantity)
+        public async Task<List<Product>?> SaleProduct(List<ListSale> products)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product is null)
-                return null;
-            product.Stock = product.Stock - quantity;
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            Sale sale = new Sale();
-            sale.Quantity = quantity;
-            sale.Vat = 0.12;
-            sale.TotalVat = (product.UnitPrice*quantity)*0.12;
-            sale.TotalSale = (product.UnitPrice*quantity) + ((product.UnitPrice*quantity)*0.12);
-            _context.Sales.Add(sale);
+            try
+            {
+                var totalVat = 0.00;
+                var totalSale = 0.00;
+                var vat = 0.12;
+
+                foreach(var productToUpdate in products)
+                {
+                    var product = await _context.Products.FindAsync(productToUpdate.Id);
+                    // If the stock of the current product is less than the requested amount we throw an exception
+                    if(product != null)
+                    {
+                        if (productToUpdate.Quantity <= 0 || productToUpdate.Quantity > product.Stock)
+                        {
+                            // Handle invalid quantity or insufficient stock for a specific product
+                            // You can skip or log these products that fail to update
+                            continue;
+                        }
+                         
+                        product.Stock -= productToUpdate.Quantity;
+                        totalVat += product.UnitPrice * productToUpdate.Quantity * vat;
+                        totalSale += (product.UnitPrice * productToUpdate.Quantity) + (product.UnitPrice * productToUpdate.Quantity * vat);
+
+                        
+                    } 
+
+                }
+                
+                Sale sale = new()
+                {
+                    Vat = vat,
+                    TotalVat = totalVat,
+                    TotalSale = totalSale
+                };
+
+                _context.Sales.Add(sale);
+
+
+            }
+            catch(Exception ex)
+            {   
+                
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+            
+           
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
             
             return await _context.Products.ToListAsync();
         }
         
-        public async Task<List<Product>?> BuyProduct(int id, int quantity)
+        public async Task<List<Product>?> BuyProduct(List<ListSale> products)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product is null)
-                return null;
-            product.Stock = product.Stock + quantity;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                foreach(var productToUpdate in products)
+                {
+                    var product = await _context.Products.FindAsync(productToUpdate.Id);
+                    // If the stock of the current product is less than the requested amount we throw an exception
+                    if(product != null)
+                    {
+                       
+                        product.Stock += productToUpdate.Quantity;
+
+                    }
+
+                }
+            }
+            catch(Exception ex)
+            {   
+                
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+
+            
 
             await _context.SaveChangesAsync();
-            
+            await transaction.CommitAsync();
+
             return await _context.Products.ToListAsync();
         }
 
