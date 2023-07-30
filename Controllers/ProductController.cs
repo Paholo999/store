@@ -49,7 +49,7 @@ namespace store.Controllers
             return Ok(result);
         }
 
-        [HttpPut("SaleProduct")]
+        [HttpPut("SaleProduct/{id}/{quantity}")]
         public async Task<ActionResult<List<Product>>> SaleProduct(int id, int quantity)
         {
             var result = await _productService.SaleProduct(id,quantity);
