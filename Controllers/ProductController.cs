@@ -50,13 +50,10 @@ namespace store.Controllers
             return Ok(result);
         }
 
-<<<<<<< HEAD
+
+        
         [HttpPut("SaleProduct")]
         public async Task<ActionResult<List<Product>>> SaleProduct(List<ListSale> listSales)
-=======
-        [HttpPut("SaleProduct/{id}/{quantity}")]
-        public async Task<ActionResult<List<Product>>> SaleProduct(int id, int quantity)
->>>>>>> ea55c1144e62df6f4c5d1e75f386af6ea7b7d48b
         {
             var result = await _productService.SaleProduct(listSales);
             if(result is null)
